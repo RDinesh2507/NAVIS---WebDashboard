@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satellite Data Dashboard</title>
+    <!-- Load Tailwind CSS from CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to ensure full-screen dark background and Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        /* Custom class for the data boxes */
+        .data-card {
+            background-color: #1f2937; /* Darker gray background */
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            border-left: 4px solid #3b82f6; /* Blue border accent */
+        }
+        /* Style for the video placeholder */
+        .video-placeholder {
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 2px dashed #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 sm:p-8">
+    <!-- Main Dashboard Container -->
+    <div class="max-w-7xl mx-auto">
+        <!-- Dashboard Header -->
+        <header class="mb-8 border-b border-gray-700 pb-4">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-400">
+                    <span class="text-blue-200">Navis</span>Webhost Dashboard
+                </h1>
+                <!-- Simple status indicator -->
+                <div class="items-center space-x-2 hidden sm:flex">
+                    <span class="text-sm font-medium text-gray-400">System Status</span>
+                    <div id="statusIndicator" class="w-4 h-4 rounded-full {{ data.status_color }} shadow-lg"></div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">https://navis-webhost.vercel.app</p>
+        </header>
+
+        <!-- Main Content Grid (Two Columns for Desktop, Stacked for Mobile) -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- COLUMN 1: Satellite Data -->
+            <section>
+                <h2 class="text-2xl font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Satellite Data</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Section: Environmental & Motion -->
+                    <div class="data-group space-y-3">
+                        <h3 class="text-lg font-bold text-blue-300 mb-2">Telemetry & Environment</h3>
+                        {% macro data_entry(label, value, unit='') %}
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-1">
+                            <span class="text-sm font-medium text-gray-400">{{ label }}</span>
+                            <span class="text-base font-mono text-white">{{ value }} <span class="text-gray-500">{{ unit }}</span></span>
+                        </div>
+                        {% endmacro %}
+
+                        {{ data_entry('Temperature', data.temperature, '°C') }}
+                        {{ data_entry('Pressure', data.pressure, 'hPA') }}
+                        {{ data_entry('Altitude', data.altitude, 'meters') }}
+                        <div class="h-4"></div> <!-- Spacer -->
+
+                        <h3 class="text-lg font-bold text-blue-300 mb-2">Motion & Orientation</h3>
+                        {{ data_entry('Acceleration (x)', data.accel_x, 'g') }}
+                        {{ data_entry('Acceleration (y)', data.accel_y, 'g') }}
+                        {{ data_entry('Acceleration (z)', data.accel_z, 'g') }}
+                        {{ data_entry('Orientation (x)', data.orient_x, '°') }}
+                        {{ data_entry('Orientation (y)', data.orient_y, '°') }}
+                        {{ data_entry('Orientation (z)', data.orient_z, '°') }}
+                    </div>
+
+                    <!-- Section: System Status & Location -->
+                    <div class="data-group space-y-3">
+                        <h3 class="text-lg font-bold text-blue-300 mb-2">System Status</h3>
+                        {{ data_entry('Air Quality Index', data.aqi, 'AQI') }}
+                        {{ data_entry('Alert Sent', data.alert_sent, '') }}
+                        {{ data_entry('Satellites Connected', data.satellites_connected, '') }}
+                        {{ data_entry('UV Detection', data.uv_detection, '') }}
+                        {{ data_entry('No. of UV Detections', data.uv_count, '') }}
+                        {{ data_entry('Battery Level', data.battery_level, '%') }}
+                        <div class="h-4"></div> <!-- Spacer -->
+
+                        <h3 class="text-lg font-bold text-blue-300 mb-2">Toxic Gas Levels</h3>
+                        {{ data_entry('CO₂', data.gas_co2, 'PPM') }}
+                        {{ data_entry('NO₂', data.gas_no2, 'PPM') }}
+                        {{ data_entry('CO', data.gas_co, 'PPM') }}
+                        <div class="h-4"></div> <!-- Spacer -->
+
+                        <h3 class="text-lg font-bold text-blue-300 mb-2">Location & Time (Live)</h3>
+                        <div id="istDate" class="flex justify-between items-center border-b border-gray-700 pb-1">
+                            <span class="text-sm font-medium text-gray-400">IST Date</span>
+                            <span class="text-base font-mono text-white">{{ data.ist_date }}</span>
+                        </div>
+                        <div id="istTime" class="flex justify-between items-center border-b border-gray-700 pb-1">
+                            <span class="text-sm font-medium text-gray-400">IST Time</span>
+                            <span class="text-base font-mono text-white">{{ data.ist_time }}</span>
+                        </div>
+                        {{ data_entry('Latitude', data.latitude, '') }}
+                        {{ data_entry('Longitude', data.longitude, '') }}
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 2: Webcam Live Footage -->
+            <section class="lg:h-full">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">Satellite Webcam Live Footage</h2>
+
+                <div class="data-card video-placeholder bg-gray-800 lg:h-[90%] w-full">
+                    <div class="p-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-blue-500 mb-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9A2.25 2.25 0 0 0 4.5 18.75Z" />
+                        </svg>
+                        <p class="text-xl font-semibold text-white">Live Video Feed Placeholder</p>
+                        <p class="text-sm text-gray-400 mt-1">(Laptop Camera Footage with Object Detection)</p>
+                        <p class="text-xs text-red-400 mt-2">Requires separate streaming and ML backend implementation (e.g., OpenCV, WebSockets).</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // --- Client-Side JavaScript for Live Time Update ---
+        const istTimeElement = document.getElementById('istTime').querySelector('span:last-child');
+        const istDateElement = document.getElementById('istDate').querySelector('span:last-child');
+        const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC + 5:30
+
+        function updateTime() {
+            // Get current UTC time
+            const now = new Date();
+            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000); // Convert to UTC
+            
+            // Apply IST offset
+            const istTime = new Date(utcTime + istOffset);
+
+            // Format time (HH:MM:SS)
+            const timeString = istTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            // Format date (DD/MM/YYYY)
+            const dateString = istTime.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+            istTimeElement.textContent = timeString;
+            istDateElement.textContent = dateString;
+        }
+
+        // Update time immediately, then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // NOTE: For true real-time dashboard data (e.g., temperature), 
+        // you would use WebSockets or AJAX requests (fetch) to continuously pull new data from the Flask server.
+    </script>
+</body>
+</html>
